@@ -1,6 +1,7 @@
 buildscript {
     ext {
         KOTLIN_VERSION = "1.1.51"
+        KETHEREUM_VERSION = "0.26"
     }
 
     repositories {
@@ -37,6 +38,8 @@ dependencies {
 
     compile 'com.github.ligi:ipfs-api-kotlin:0.9'
     compile 'com.github.ligi:kontinuum-model:0.4'
+    compile "com.github.ligi.kethereum:crypto:$KETHEREUM_VERSION"
+
     compile 'com.github.ligi.kithub:api:0.1'
 
     compile 'org.mortbay.jetty.alpn:alpn-boot:8.1.11.v20170118'
