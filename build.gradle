@@ -43,9 +43,12 @@ dependencies {
     compile "com.github.ligi.kethereum:crypto:$KETHEREUM_VERSION"
     compile "com.github.ligi:khex:0.4"
 
-    compile 'com.github.ligi.kithub:api:0.10'
+    compile 'com.github.ligi.kithub:api:0.11'
 
     compile 'org.mortbay.jetty.alpn:alpn-boot:8.1.11.v20170118'
+
+    compile "org.bouncycastle:bcprov-jdk15on:1.54"
+    compile "org.bouncycastle:bcpg-jdk15on:1.54"
     
     testCompile 'org.assertj:assertj-core:3.6.2'
 }

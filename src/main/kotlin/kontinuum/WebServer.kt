@@ -13,7 +13,9 @@ import org.kethereum.extensions.toBytesPadded
 import org.threeten.bp.LocalDateTime
 import org.threeten.bp.ZoneId
 import org.walleth.khex.toHexString
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringBufferInputStream
 
 
 fun startWebServer() {
@@ -48,14 +50,34 @@ fun processWebHook(event: String, payload: String) {
             val fromJson = githubBaseEventAdapter.fromJson(payload)
             when (fromJson!!.action) {
                 "closed" -> {
-
                     val eventInfo = githubIssueCloseEventAdapter.fromJson(payload)!!
-                    githubInteractor.addIssueComment(
-                            eventInfo.repository.full_name,
-                            eventInfo.issue.number.toString(),
-                            "This issue now was closed with assignee " + eventInfo.issue.assignees.firstOrNull()
-                            , eventInfo.installation.id)
+                    val activeIssue = activeIssues.firstOrNull { it.issue == eventInfo.issue.number.toString() && it.project == eventInfo.repository.full_name }
 
+                    if (activeIssue == null) {
+                        println("Issue was closed but had no bounty. No work for us.")
+                    } else {
+                        val assignee = eventInfo.issue.assignees.firstOrNull()
+
+                        val body = if (assignee == null) {
+                            "This issue was closed but had no assignee - to get the bounty-account you need to close the issue with one assignee!"
+                        } else {
+                            val userPGP = githubInteractor.getUserPGP(assignee.login!!, eventInfo.installation.id)
+                            if (userPGP.isEmpty()) {
+                                "No PGP info for the assignee - to get the bounty-account the assignee must set configure pgp in github."
+                            } else {
+                                val key = PGPUtils.readPublicKey(StringBufferInputStream(userPGP.first().public_key))
+
+                                val byteArrayOutputStream = ByteArrayOutputStream()
+                                PGPUtils.encryptFile(byteArrayOutputStream, activeIssue.privteKey, key, true, false)
+                                "This is the private key encrypted for the assignee: <br/><br/>" + byteArrayOutputStream.toString().replace("\n", "<br/>")
+                            }
+                        }
+                        githubInteractor.addIssueComment(
+                                eventInfo.repository.full_name,
+                                eventInfo.issue.number.toString(),
+                                body
+                                , eventInfo.installation.id)
+                    }
                 }
                 "labeled" -> {
                     val eventInfo = githubIssueLabelEventAdapter.fromJson(payload)!!
@@ -90,7 +112,7 @@ fun processWebHook(event: String, payload: String) {
                             githubInteractor.addIssueComment(
                                     eventInfo.repository.full_name,
                                     eventInfo.issue.number.toString(),
-                                    "This issue now has a bounty-address via [issuETH](https://github.com/issuETH/issuETH).\n\n" +
+                                    "This issue now has a bounty-address via [issuETH](https://github.com/issuETH/issuETH).<br/><br/>" +
                                             "![](https://chart.googleapis.com/chart?cht=qr&chs=256x256&chl=$qrContent)"
                                     , eventInfo.installation.id)
                         } else {
