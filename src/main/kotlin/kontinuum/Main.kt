@@ -3,6 +3,7 @@ package kontinuum
 import kontinuum.ConfigProvider.config
 import java.lang.System.exit
 
+
 fun main(args: Array<String>) {
 
     if (!configFile.exists()) {
@@ -10,8 +11,11 @@ fun main(args: Array<String>) {
         exit(1)
     }
 
+    loadActiveIsues()
+    println("got active issues: " + activeIssues.size)
 
     println("using config: " + config)
-
+    startWebServer()
+    watchChain()
 }
 
