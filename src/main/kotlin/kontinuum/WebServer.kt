@@ -80,7 +80,9 @@ fun processWebHook(event: String, payload: String) {
                             githubInteractor.addIssueComment(
                                     eventInfo.repository.full_name,
                                     eventInfo.issue.number.toString(),
-                                    "![](https://chart.googleapis.com/chart?cht=qr&chs=256x256&chl=$qrContent)", eventInfo.installation.id)
+                                    "This issue now has a bounty-address via [issuETH](https://github.com/issuETH/issuETH).\n\n" +
+                                            "![](https://chart.googleapis.com/chart?cht=qr&chs=256x256&chl=$qrContent)"
+                                    , eventInfo.installation.id)
                         } else {
                             println("already exists")
                         }
