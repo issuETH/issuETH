@@ -7,6 +7,7 @@ import kontinuum.model.config.Config
 import okhttp3.OkHttpClient
 import org.ligi.kithub.GithubApplicationAPI
 import org.ligi.kithub.model.GithubBaseEvent
+import org.ligi.kithub.model.GithubIssueCloseEvent
 import org.ligi.kithub.model.GithubIssueLabelEvent
 import java.io.File
 
@@ -21,10 +22,11 @@ val moshi = Moshi.Builder().build()!!
 
 val configAdapter = moshi.adapter(Config::class.java)!!
 val githubIssueLabelEventAdapter = moshi.adapter(GithubIssueLabelEvent::class.java)!!
+val githubIssueCloseEventAdapter = moshi.adapter(GithubIssueCloseEvent::class.java)!!
 val githubBaseEventAdapter = moshi.adapter(GithubBaseEvent::class.java)!!
 
-var listMyData = Types.newParameterizedType(List::class.java, ActiveIssue::class.java)
-var issueHolderAdapter = moshi.adapter<List<ActiveIssue>>(listMyData)
+var activeIssueListType = Types.newParameterizedType(List::class.java, ActiveIssue::class.java)
+var issueHolderAdapter = moshi.adapter<List<ActiveIssue>>(activeIssueListType)
 
 val githubInteractor by lazy { GithubApplicationAPI(config.github.integration, File(config.github.cert)) }
 val activeIssues = mutableListOf<ActiveIssue>()

@@ -47,6 +47,16 @@ fun processWebHook(event: String, payload: String) {
         "issues" -> {
             val fromJson = githubBaseEventAdapter.fromJson(payload)
             when (fromJson!!.action) {
+                "closed" -> {
+
+                    val eventInfo = githubIssueCloseEventAdapter.fromJson(payload)!!
+                    githubInteractor.addIssueComment(
+                            eventInfo.repository.full_name,
+                            eventInfo.issue.number.toString(),
+                            "This issue now was closed with assignee " + eventInfo.issue.assignees.firstOrNull()
+                            , eventInfo.installation.id)
+
+                }
                 "labeled" -> {
                     val eventInfo = githubIssueLabelEventAdapter.fromJson(payload)!!
                     if (eventInfo.label.name.toLowerCase() == "bounty") {
@@ -57,11 +67,11 @@ fun processWebHook(event: String, payload: String) {
                             val createEcKeyPair = Keys.createEcKeyPair()
                             val privateHEX = createEcKeyPair.privateKey.toBytesPadded(PRIVATE_KEY_SIZE).toHexString()
 
-                            File(dataPath,"private").writer().use {
+                            File(dataPath, "private").writer().use {
                                 it.write(privateHEX)
                             }
                             val address = Keys.getAddress(createEcKeyPair)
-                            File(dataPath,"public").writer().use {
+                            File(dataPath, "public").writer().use {
                                 it.write(address)
                             }
                             activeIssues.add(ActiveIssue(
