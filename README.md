@@ -1,14 +1,21 @@
-issuETH is intended to become a [GitHub App](https://developer.github.com/apps) to be able to collect value on Ethereum to support fixing issues.
-This is inspired [by commiteth](https://developer.github.com/apps) but I was not willing to grant such [invasive permissions](https://github.com/status-im/commiteth/issues/56) to my github account to actually use it.
-Also being a GitHub App does not only solve this problem - we can also get a way nicer WorkFlow which would be the following:
+# What is it?
 
- - Add this app to your account or Organisation
- - Add the bounty label to an issue you want
- - transfer value to it (e.g. with the BarCode that is now as an answer to the issue)
- - Close the issue with a PR and the "closes #<issue>" in the message
- - Profit
+This is a GitHub app to issue bounties for issues on the Ethereum BlockChain.
 
-Still thinking about how to transfer the value after closing. My current Idea for the final transfer is: the private key gets encrypted for the PGP key that is used to sign the commit message that closes the issue and posted as an answer to the issue. Why so complicated you ask:
+# Usage
 
- * this way we can also cover transfer of tokens (e.g. project tokens) easily
- * no ether is needed for transfereing the value - so there are no gas-costs to operate issuETH (YAY)
+ * install [https://github.com/apps/issueth](https://github.com/apps/issueth)
+ * add label "bounty" to your issue
+
+# Details
+
+Please read [this blog post](http://walleth.org/2017/10/18/issuETH-ethereum-issue-bounties/)
+
+# Credits
+
+It is inspired [by commiteth](https://developer.github.com/apps) but I was not willing to grant such [invasive permissions](https://github.com/status-im/commiteth/issues/56) to my github account to actually use it.
+
+# License
+
+GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+see LICENSE
