@@ -109,11 +109,17 @@ fun processWebHook(event: String, payload: String) {
                             println("labeled " + eventInfo.label.name + " " + eventInfo.installation.id)
 
                             val qrContent = "ethereum:" + address
+                            var body = "This issue now has a bounty-address via [issuETH](https://github.com/issuETH/issuETH).<br/>" +
+                                    "![](https://chart.googleapis.com/chart?cht=qr&chs=256x256&chl=$qrContent)<br/>" +
+                                    "Your bounty-address is [$address](ethereum:0x$address) <br/>"
+
+                            ConfigProvider.config.chains.forEach {
+                                body += "Watch [on " + it.name + "](" + it.address_base_url.replace("ADDRESSHASH",address)+")<br/>"
+                            }
                             githubInteractor.addIssueComment(
                                     eventInfo.repository.full_name,
                                     eventInfo.issue.number.toString(),
-                                    "This issue now has a bounty-address via [issuETH](https://github.com/issuETH/issuETH).<br/><br/>" +
-                                            "![](https://chart.googleapis.com/chart?cht=qr&chs=256x256&chl=$qrContent)"
+                                    body
                                     , eventInfo.installation.id)
                         } else {
                             println("already exists")
