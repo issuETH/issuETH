@@ -1,6 +1,6 @@
 # What is it?
 
-This is a GitHub app to issue bounties for issues on the Ethereum BlockChain.
+This is a GitHub app to add bounties (Ether or ERC-20 Tokens) to issues on the Ethereum BlockChain.
 
 # Usage
 
