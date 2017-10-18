@@ -4,7 +4,11 @@ package kontinuum
 import kontinuum.model.config.Chain
 import org.kethereum.extensions.clean0xPrefix
 import org.kethereum.extensions.prepend0xPrefix
+import org.kethereum.functions.getTokenTransferTo
+import org.kethereum.functions.getTokenTransferValue
+import org.kethereum.functions.isTokenTransfer
 import org.kethereum.rpc.EthereumRPC
+import org.kethereum.rpc.toKethereumTransaction
 import java.math.BigInteger
 
 class StatefulChain(val chain: Chain, val ethereumRPC: EthereumRPC, var lastBlock: String)
@@ -41,12 +45,25 @@ fun watchChain() {
 
 fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
     statefulChain.ethereumRPC.getBlockByNumber(newBlock)?.transactions?.forEach { tx ->
+
+
         tx.to?.let { to ->
-            activeIssues.filter { it.address.clean0xPrefix() == to.clean0xPrefix() }.forEach {
-                githubInteractor.addIssueComment(it.project,it.issue,
-                        "new [transaction on " + statefulChain.chain.name +"]("+statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix())+")"+
-                        " with value " + BigInteger(tx.value.clean0xPrefix(),16),
-                        it.installation)
+            val kethereumTransaction = tx.toKethereumTransaction()
+            if (kethereumTransaction.isTokenTransfer()) {
+                activeIssues.filter { kethereumTransaction.getTokenTransferTo().cleanHex == it.address.clean0xPrefix() }.forEach {
+                    githubInteractor.addIssueComment(it.project, it.issue,
+                            "new token-transfer [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
+                                    " with value " + kethereumTransaction.getTokenTransferValue(),
+                            it.installation)
+                }
+
+            } else {
+                activeIssues.filter { it.address.clean0xPrefix() == to.clean0xPrefix() }.forEach {
+                    githubInteractor.addIssueComment(it.project, it.issue,
+                            "new [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
+                                    " with value " + BigInteger(tx.value.clean0xPrefix(), 16),
+                            it.installation)
+                }
             }
         }
     }
