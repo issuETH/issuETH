@@ -37,6 +37,7 @@ fun watchChain() {
                 }
             } catch (e: Exception) {
                 println("problem at block ${statefulChain.lastBlock} " + e.message)
+                e.printStackTrace()
             }
         }
 
@@ -52,11 +53,22 @@ fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
         tx.to?.let { to ->
             val kethereumTransaction = tx.toKethereumTransaction()
             if (kethereumTransaction.isTokenTransfer()) {
-                activeIssues.filter { kethereumTransaction.getTokenTransferTo().cleanHex == it.address.clean0xPrefix() }.forEach {
-                    githubInteractor.addIssueComment(it.project, it.issue,
-                            "new token-transfer [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
-                                    " with value " + kethereumTransaction.getTokenTransferValue(),
-                            it.installation)
+                activeIssues.filter { kethereumTransaction.getTokenTransferTo().cleanHex.toLowerCase() == it.address.clean0xPrefix().toLowerCase() }.forEach {
+                    val value = kethereumTransaction.getTokenTransferValue()
+                    val token = tokenMap[statefulChain.chain.networkId.toString()]!![to.clean0xPrefix().toLowerCase()]
+                    if (token != null) {
+                        val scaledValue = BigDecimal(value).divide(BigDecimal(BigInteger("10").pow(BigInteger(token.decimals).toInt())))
+
+                        githubInteractor.addIssueComment(it.project, it.issue,
+                                "new token-transfer [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
+                                        " with value " + scaledValue + token.symbol,
+                                it.installation)
+                    } else {
+                        githubInteractor.addIssueComment(it.project, it.issue,
+                                "new unknown token-transfer [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
+                                        " with value " + value + "<br/>The token must be registered here: [https://github.com/MyEtherWallet/ethereum-lists](https://github.com/MyEtherWallet/ethereum-lists)",
+                                it.installation)
+                    }
                 }
 
             } else {
@@ -64,7 +76,7 @@ fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
                     val value = BigDecimal(BigInteger(tx.value.clean0xPrefix(), 16)).divide(BigDecimal(ETH_IN_WEI))
                     githubInteractor.addIssueComment(it.project, it.issue,
                             "new [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
-                                    " with value " + value +"ETH",
+                                    " with value " + value + "ETH",
                             it.installation)
                 }
             }

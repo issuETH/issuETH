@@ -5,13 +5,15 @@ import com.squareup.moshi.Types
 import kontinuum.ConfigProvider.config
 import kontinuum.model.config.Config
 import okhttp3.OkHttpClient
+import org.kethereum.extensions.clean0xPrefix
 import org.ligi.kithub.GithubApplicationAPI
 import org.ligi.kithub.model.GithubBaseEvent
 import org.ligi.kithub.model.GithubIssueCloseEvent
 import org.ligi.kithub.model.GithubIssueLabelEvent
 import java.io.File
+import java.io.FileFilter
 
-
+data class Token(val symbol: String, val address: String, val decimals: String)
 
 val okhttp = OkHttpClient.Builder().build()!!
 
@@ -25,12 +27,16 @@ val githubIssueLabelEventAdapter = moshi.adapter(GithubIssueLabelEvent::class.ja
 val githubIssueCloseEventAdapter = moshi.adapter(GithubIssueCloseEvent::class.java)!!
 val githubBaseEventAdapter = moshi.adapter(GithubBaseEvent::class.java)!!
 
+var tokensListType = Types.newParameterizedType(List::class.java, Token::class.java)
+var tokenListAdapter = moshi.adapter<List<Token>>(tokensListType)
+
 var activeIssueListType = Types.newParameterizedType(List::class.java, ActiveIssue::class.java)
 var issueHolderAdapter = moshi.adapter<List<ActiveIssue>>(activeIssueListType)
 
 val githubInteractor by lazy { GithubApplicationAPI(config.github.integration, File(config.github.cert)) }
 val activeIssues = mutableListOf<ActiveIssue>()
-data class ActiveIssue(val address: String, val project: String, val issue: String,val installation: String,val privteKey: String)
+
+data class ActiveIssue(val address: String, val project: String, val issue: String, val installation: String, val privteKey: String)
 
 val activeIssueJSONFile = File("db.json")
 
@@ -47,4 +53,18 @@ fun loadActiveIsues() {
 
         activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
     }
+}
+
+val tokenMap = mutableMapOf<String, Map<String, Token>>()
+fun loadTokens() {
+    File("data/tokens").listFiles(FileFilter { it.name.endsWith("json") }).forEach { tokenFile ->
+        val cleanName = tokenFile.name.replace(".json", "")
+        val possibleTokensForChain = tokenListAdapter.fromJson(tokenFile.reader().use { it.readText() })?.associate { it.address.toLowerCase().clean0xPrefix() to it }
+        possibleTokensForChain?.let {
+            tokenMap.put(cleanName.toLowerCase(), it)
+        }
+
+
+    }
+    println(tokenMap)
 }
