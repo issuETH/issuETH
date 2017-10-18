@@ -32,7 +32,6 @@ fun watchChain() {
 
                 if (newBlock != null && newBlock != statefulChain.lastBlock) {
                     statefulChain.lastBlock = newBlock
-                    println("New Block $newBlock on " + statefulChain.chain.name)
                     processBlockNumber(newBlock, statefulChain)
                 }
             } catch (e: Exception) {
@@ -47,8 +46,12 @@ fun watchChain() {
 }
 
 fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
-    statefulChain.ethereumRPC.getBlockByNumber(newBlock)?.transactions?.forEach { tx ->
 
+    val transactions = statefulChain.ethereumRPC.getBlockByNumber(newBlock)?.transactions
+
+    println("New Block $newBlock on " + statefulChain.chain.name + " " + transactions?.size + " txs")
+
+    transactions?.forEach { tx ->
 
         tx.to?.let { to ->
             val kethereumTransaction = tx.toKethereumTransaction()
