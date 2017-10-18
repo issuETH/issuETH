@@ -2,6 +2,7 @@ package kontinuum
 
 
 import kontinuum.model.config.Chain
+import org.kethereum.ETH_IN_WEI
 import org.kethereum.extensions.clean0xPrefix
 import org.kethereum.extensions.prepend0xPrefix
 import org.kethereum.functions.getTokenTransferTo
@@ -9,6 +10,7 @@ import org.kethereum.functions.getTokenTransferValue
 import org.kethereum.functions.isTokenTransfer
 import org.kethereum.rpc.EthereumRPC
 import org.kethereum.rpc.toKethereumTransaction
+import java.math.BigDecimal
 import java.math.BigInteger
 
 class StatefulChain(val chain: Chain, val ethereumRPC: EthereumRPC, var lastBlock: String)
@@ -59,9 +61,10 @@ fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
 
             } else {
                 activeIssues.filter { it.address.clean0xPrefix() == to.clean0xPrefix() }.forEach {
+                    val value = BigDecimal(BigInteger(tx.value.clean0xPrefix(), 16)).divide(BigDecimal(ETH_IN_WEI))
                     githubInteractor.addIssueComment(it.project, it.issue,
                             "new [transaction on " + statefulChain.chain.name + "](" + statefulChain.chain.tx_base_url.replace("TXHASH", tx.hash.prepend0xPrefix()) + ")" +
-                                    " with value " + BigInteger(tx.value.clean0xPrefix(), 16),
+                                    " with value " + value +"ETH",
                             it.installation)
                 }
             }
