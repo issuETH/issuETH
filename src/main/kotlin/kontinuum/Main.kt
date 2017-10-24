@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
     }
 
     loadActiveIsues()
+    loadProcessedTransactions()
     loadTokens()
     println("got active issues: " + activeIssues.size)
 

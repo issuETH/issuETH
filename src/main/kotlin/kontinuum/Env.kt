@@ -31,17 +31,41 @@ var tokensListType = Types.newParameterizedType(List::class.java, Token::class.j
 var tokenListAdapter = moshi.adapter<List<Token>>(tokensListType)
 
 var activeIssueListType = Types.newParameterizedType(List::class.java, ActiveIssue::class.java)
+var processedTXListType = Types.newParameterizedType(List::class.java, String::class.java)
 var issueHolderAdapter = moshi.adapter<List<ActiveIssue>>(activeIssueListType)
+var processedTXAdapter = moshi.adapter<List<String>>(processedTXListType)
 
 val githubInteractor by lazy { GithubApplicationAPI(config.github.integration, File(config.github.cert)) }
 val activeIssues = mutableListOf<ActiveIssue>()
+val processedTransactions = mutableListOf<String>()
 
 data class ActiveIssue(val address: String, val project: String, val issue: String, val installation: String, val privteKey: String)
 
 val activeIssueJSONFile = File("db.json")
+val processedTXJSONFile = File("txdb.json")
 
 fun saveActiveIssues() {
     activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
+}
+
+private fun saveProcessedTX() {
+    processedTXJSONFile.bufferedWriter().use { it.write(processedTXAdapter.toJson(processedTransactions)) }
+}
+
+fun saveProcessedTX(txHash: String) {
+    processedTransactions.add(txHash.toLowerCase())
+    saveProcessedTX()
+}
+
+fun loadProcessedTransactions() {
+    if (processedTXJSONFile.exists()) {
+        val oldElements = processedTXAdapter.fromJson(processedTXJSONFile.bufferedReader().use { it.readText() })
+        if (oldElements != null) {
+            processedTransactions.addAll(oldElements)
+        }
+
+        activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
+    }
 }
 
 fun loadActiveIsues() {
