@@ -12,6 +12,7 @@ import org.ligi.kithub.model.GithubIssueCloseEvent
 import org.ligi.kithub.model.GithubIssueLabelEvent
 import java.io.File
 import java.io.FileFilter
+import java.math.BigInteger
 
 data class Token(val symbol: String, val address: String, val decimals: String)
 
@@ -31,6 +32,7 @@ var tokensListType = Types.newParameterizedType(List::class.java, Token::class.j
 var tokenListAdapter = moshi.adapter<List<Token>>(tokensListType)
 
 var activeIssueListType = Types.newParameterizedType(List::class.java, ActiveIssue::class.java)
+var blockHeightsType = Types.newParameterizedType(Map::class.java, String::class.java,String::class.java)
 var processedTXListType = Types.newParameterizedType(List::class.java, String::class.java)
 var issueHolderAdapter = moshi.adapter<List<ActiveIssue>>(activeIssueListType)
 var processedTXAdapter = moshi.adapter<List<String>>(processedTXListType)
@@ -38,11 +40,30 @@ var processedTXAdapter = moshi.adapter<List<String>>(processedTXListType)
 val githubInteractor by lazy { GithubApplicationAPI(config.github.integration, File(config.github.cert)) }
 val activeIssues = mutableListOf<ActiveIssue>()
 val processedTransactions = mutableListOf<String>()
+val processedBlocks = mutableMapOf<String, BigInteger>()
+val processedBlocksAdapter = moshi.adapter<Map<String, String>>(blockHeightsType)
 
 data class ActiveIssue(val address: String, val project: String, val issue: String, val installation: String, val privteKey: String)
 
 val activeIssueJSONFile = File("db.json")
+val blockHeightsJSONFile = File("blocks.json")
 val processedTXJSONFile = File("txdb.json")
+
+fun saveBlockHeights() {
+    val newMap = processedBlocks.toList().associate { it.first to it.second.toString() }
+    blockHeightsJSONFile.bufferedWriter().use { it.write(processedBlocksAdapter.toJson(newMap)) }
+}
+
+fun loadBlockHeights() {
+    if (blockHeightsJSONFile.exists()) {
+        val oldElements = processedBlocksAdapter.fromJson(blockHeightsJSONFile.bufferedReader().use { it.readText() })
+                ?.toList()?.associate { it.first to BigInteger(it.second) }
+        if (oldElements != null) {
+            processedBlocks.putAll(oldElements)
+        }
+
+    }
+}
 
 fun saveActiveIssues() {
     activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
@@ -63,8 +84,6 @@ fun loadProcessedTransactions() {
         if (oldElements != null) {
             processedTransactions.addAll(oldElements)
         }
-
-        activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
     }
 }
 
@@ -74,8 +93,6 @@ fun loadActiveIsues() {
         if (oldElements != null) {
             activeIssues.addAll(oldElements)
         }
-
-        activeIssueJSONFile.bufferedWriter().use { it.write(issueHolderAdapter.toJson(activeIssues)) }
     }
 }
 

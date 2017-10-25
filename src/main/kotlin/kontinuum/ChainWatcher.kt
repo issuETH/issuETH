@@ -15,9 +15,6 @@ import java.math.BigInteger
 
 class StatefulChain(val chain: Chain, val ethereumRPC: EthereumRPC, var lastBlock: String)
 
-
-val processedBlocks = mutableMapOf<StatefulChain, BigInteger>()
-
 fun watchChain() {
 
     val statefulChains = ConfigProvider.config.chains.map {
@@ -33,7 +30,6 @@ fun watchChain() {
                 val newBlock = statefulChain.ethereumRPC.getBlockNumberString()
 
                 if (newBlock != null && newBlock != statefulChain.lastBlock) {
-                    statefulChain.lastBlock = newBlock
                     processBlockNumber(newBlock, statefulChain)
                 }
             } catch (e: Exception) {
@@ -48,12 +44,15 @@ fun watchChain() {
 }
 
 fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
-    var lastBlock = processedBlocks.getOrElse(statefulChain, { BigInteger.ZERO })
+    var lastBlock = processedBlocks.getOrElse(statefulChain.chain.name, { BigInteger.ZERO })
 
     val newBlockBigInteger = BigInteger(newBlock.clean0xPrefix(), 16)
     while (lastBlock <= newBlockBigInteger) {
         lastBlock += BigInteger.ONE
-        processedBlocks.put(statefulChain, lastBlock)
+        statefulChain.lastBlock = "0x" + lastBlock.toString(16)
+
+        processedBlocks.put(statefulChain.chain.name, lastBlock)
+        saveBlockHeights()
 
         val transactions = statefulChain.ethereumRPC.getBlockByNumber("0x" + lastBlock.toString(16))?.transactions
 
@@ -64,7 +63,7 @@ fun processBlockNumber(newBlock: String, statefulChain: StatefulChain) {
             tx.to?.let { to ->
                 if (processedTransactions.contains(tx.hash.toLowerCase())) {
                     println("skipping already processed " + tx.hash)
-                }else {
+                } else {
                     val kethereumTransaction = tx.toKethereumTransaction()
                     if (kethereumTransaction.isTokenTransfer()) {
                         activeIssues.filter { kethereumTransaction.getTokenTransferTo().cleanHex.toLowerCase() == it.address.clean0xPrefix().toLowerCase() }.forEach {

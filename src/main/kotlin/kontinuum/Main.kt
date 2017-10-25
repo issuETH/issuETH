@@ -13,6 +13,7 @@ fun main(args: Array<String>) {
 
     loadActiveIsues()
     loadProcessedTransactions()
+    loadBlockHeights()
     loadTokens()
     println("got active issues: " + activeIssues.size)
 
